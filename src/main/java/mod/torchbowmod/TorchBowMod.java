@@ -1,12 +1,17 @@
 package mod.torchbowmod;
 
 
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
+import net.minecraft.block.AbstractBlock.Settings;
 import net.minecraft.block.Block;
+import net.minecraft.block.Material;
 import net.minecraft.entity.EntityClassification;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
@@ -18,19 +23,24 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ObjectHolder;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@Mod(TorchBowMod.MODID)
-public class TorchBowMod {
+import de.jottyfan.minecraft.quickiefabric.blocks.QuickieBlocks;
+import de.jottyfan.minecraft.quickiefabric.items.QuickieItems;
+import de.jottyfan.minecraft.quickiefabric.tools.QuickieTools;
+
+public class TorchBowMod implements ModInitializer {
     public static final String MODID = "torchbowmod";
     public static Logger LOGGER = LogManager.getLogger("TorchBowMod");
-    public static ItemGroup torchBowModTab = (new ItemGroup("torchBowModTab") {
-        @Override
-        public ItemStack createIcon() {
-            return new ItemStack(torchbow);
-        }
-    });
+    public static Item torchbow = new TorchBow(Settings.of(Material.WOOD).defaultMaxDamage(384))
+        .setIdentifier(new Identifier(MODID, "torchbow"));
+    public static final ItemGroup torchBowModTab = FabricItemGroupBuilder.create(new Identifier(MODID, "all")).icon(() -> new ItemStack(torchbow))
+  			.appendItems(stacks -> {
+  				stacks.add(new ItemStack(torchbow));
+  			}).build();
+
 
     @ObjectHolder("torchbandolier:torch_bandolier")
     public static Item torchbinder = null;
@@ -39,9 +49,6 @@ public class TorchBowMod {
     @ObjectHolder("ceilingtorch:torch")
     public static Block CeilingTorch = null;
 
-    public static Item torchbow = new TorchBow(new Item.Properties()
-            .group(torchBowModTab).defaultMaxDamage(384))
-            .setRegistryName(new ResourceLocation(MODID, "torchbow"));
     public static Item multiTorch = new Item(new Item.Properties()
             .group(torchBowModTab).maxStackSize(64))
             .setRegistryName(new ResourceLocation(MODID, "multitorch"));
@@ -85,6 +92,11 @@ public class TorchBowMod {
             event.getRegistry().register(TORCH_ENTITY);
         }
     }
+
+		@Override
+		public void onInitialize() {
+			
+		}
 
 }
 

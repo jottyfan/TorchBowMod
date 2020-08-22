@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "TorchBowMod",
+	"version": "${version}",
+	"name": "TorchBowMod",
+	"description": "Fabric version of TorchBowMod from https://github.com/jottyfan/TorchBowMod.git",
+	"authors": [
+		"Jottyfan"
+	],
+	"contact": {
+		"homepage": "https://github.com/jottyfan/TorchBowMod",
+		"sources": "https://github.com/jottyfan/TorchBowMod"
+	},
+	"license": "MIT",
+	"icon": "assets/torchbowmod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"mod.torchbowmod.TorchBowMod"
+#		],
+#		"client": [
+#			"mod.torchbowmod.TorchBowMod"
+		]
+	},
+	"mixins": [
+	],
+	"depends": {
+		"fabricloader": ">=0.7.4",
+		"fabric": "*",
+		"minecraft": "1.16.x"
+	},
+	"suggests": {
+		"flamingo": "*"
+	}
+}

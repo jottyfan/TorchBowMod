@@ -8,6 +8,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.projectile.AbstractArrowEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.IPacket;
 import net.minecraft.util.Direction;
@@ -25,7 +26,7 @@ import static net.minecraft.block.HorizontalBlock.HORIZONTAL_FACING;
 import static net.minecraft.util.Direction.DOWN;
 import static net.minecraft.util.Direction.UP;
 
-public class EntityTorch extends AbstractArrowEntity {
+public class EntityTorch extends ArrowEntity {
 
     public EntityTorch(FMLPlayMessages.SpawnEntity packet, World worldIn﻿) {
         super(TORCH_ENTITY, worldIn﻿);
@@ -47,7 +48,7 @@ public class EntityTorch extends AbstractArrowEntity {
     protected void onEntityHit(EntityRayTraceResult entityRayTraceResult) {
         super.onEntityHit(entityRayTraceResult);
         Entity entity = entityRayTraceResult.getEntity();
-        entity.setFire(100);
+        entity.setOnFireFor(100);
     }
 
     @Override
@@ -69,7 +70,7 @@ public class EntityTorch extends AbstractArrowEntity {
     private void setTorch(BlockRayTraceResult blockraytraceresult, BlockState blockstate, RayTraceResult raytraceResultIn) {
         BlockPos blockpos = blockraytraceresult.getPos();
         if (!blockstate.isAir(this.world, blockpos)) {
-            if (!world.isRemote) {
+            if (!world.isClient) {
                 Direction face = ((BlockRayTraceResult) raytraceResultIn).getFace();
                 BlockState torch_state = Blocks.WALL_TORCH.getDefaultState();
                 BlockPos setBlockPos = getPosOfFace(blockpos, face);
