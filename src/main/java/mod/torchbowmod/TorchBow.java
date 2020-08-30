@@ -3,13 +3,16 @@ package mod.torchbowmod;
 import net.minecraft.block.Blocks;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
-import net.minecraft.enchantment.IVanishable;
+import net.minecraft.enchantment.Vanishable;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.AbstractArrowEntity;
 import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.stat.Stat;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.*;
 import net.minecraft.util.math.MathHelper;
@@ -60,10 +63,9 @@ public class TorchBow extends RangedWeaponItem implements Vanishable {
         if (entityLiving instanceof PlayerEntity) {
             PlayerEntity playerentity = (PlayerEntity) entityLiving;
             boolean flag = playerentity.abilities.creativeMode || EnchantmentHelper.getLevel(Enchantments.INFINITY, stack) > 0;
-            ItemStack itemstack = playerentity.findAmmo(stack);
+            ItemStack itemstack = playerentity.getArrowType(stack);
 
             int i = this.getUseDuration(stack) - timeLeft;
-            i = net.minecraftforge.event.ForgeEventFactory.onArrowLoose(stack, worldIn, playerentity, i, !itemstack.isEmpty() || flag);
             if (i < 0) return;
 
             if (!itemstack.isEmpty() || flag) {
@@ -76,20 +78,20 @@ public class TorchBow extends RangedWeaponItem implements Vanishable {
                     boolean flag1 = playerentity.abilities.creativeMode || (itemstack.getItem() instanceof ArrowItem && ((ArrowItem) itemstack.getItem()).isInfinite(itemstack, stack, playerentity));
                     if (!worldIn.isClient) {
                         float size = 10;
-                        shootTorch(playerentity.rotationPitch, playerentity.rotationYaw, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                        shootTorch(playerentity.pitch, playerentity.yaw, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
                         if (itemstack.getItem() == multiTorch || (itemstack.getItem() == TorchBowMod.StorageBox && ItemStack.fromTag(itemstack.getTag().getCompound("StorageItemData")).getItem() == multiTorch)) {
-                            shootTorch(playerentity.rotationPitch - size, playerentity.rotationYaw + size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch - size, playerentity.rotationYaw, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch - size, playerentity.rotationYaw - size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch + size, playerentity.rotationYaw + size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch + size, playerentity.rotationYaw, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch + size, playerentity.rotationYaw - size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch, playerentity.rotationYaw + size * 1.2f, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
-                            shootTorch(playerentity.rotationPitch, playerentity.rotationYaw - size * 1.2f, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch - size, playerentity.yaw + size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch - size, playerentity.yaw, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch - size, playerentity.yaw - size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch + size, playerentity.yaw + size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch + size, playerentity.yaw, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch + size, playerentity.yaw - size, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch, playerentity.yaw + size * 1.2f, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
+                            shootTorch(playerentity.pitch, playerentity.yaw - size * 1.2f, playerentity, entityLiving, worldIn, itemstack, stack, flag1, f);
                         }
                     }
 
-                    worldIn.playSound((PlayerEntity) entityLiving, playerentity.prevPosX, playerentity.prevPosY, playerentity.prevPosZ, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.PLAYERS, 1.0F, 1.0F / (random.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+                    worldIn.playSound((PlayerEntity) entityLiving, playerentity.prevX, playerentity.prevY, playerentity.prevZ, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.PLAYERS, 1.0F, 1.0F / (random.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
                     if (!playerentity.abilities.creativeMode) {
                         if (itemstack.getItem() == Blocks.TORCH.asItem() || itemstack.getItem() == multiTorch) {
                         		itemstack.decrement(1);
@@ -117,7 +119,7 @@ public class TorchBow extends RangedWeaponItem implements Vanishable {
                         }
                     }
 
-                    playerentity.addStat(Stats.ITEM_USED.get(this));
+                    playerentity.addStat(Stat.ITEM_USED.get(this));
                 }
             }
         }

@@ -49,9 +49,9 @@ public class TorchBowMod implements ModInitializer {
     @ObjectHolder("ceilingtorch:torch")
     public static Block CeilingTorch = null;
 
-    public static Item multiTorch = new Item(new Item.Properties()
+    public static Item multiTorch = new Item(Settings.of(Material.FIRE)
             .group(torchBowModTab).maxStackSize(64))
-            .setRegistryName(new ResourceLocation(MODID, "multitorch"));
+            .setIdentifier(new Identifier(MODID, "multitorch"));
     public static EntityType<EntityTorch> TORCH_ENTITY;
 
     public TorchBowMod() {

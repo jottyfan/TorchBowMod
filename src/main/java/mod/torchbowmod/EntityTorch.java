@@ -1,130 +1,126 @@
 package mod.torchbowmod;
 
+import static mod.torchbowmod.TorchBowMod.CeilingTorch;
+import static mod.torchbowmod.TorchBowMod.TORCH_ENTITY;
+
+import java.util.Set;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.BushBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.projectile.AbstractArrowEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
+import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.IPacket;
-import net.minecraft.util.Direction;
+import net.minecraft.network.Packet;
+import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.EntityRayTraceResult;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.network.FMLPlayMessages;
-import net.minecraftforge.fml.network.NetworkHooks;
-
-import static mod.torchbowmod.TorchBowMod.CeilingTorch;
-import static mod.torchbowmod.TorchBowMod.TORCH_ENTITY;
-import static net.minecraft.block.HorizontalBlock.HORIZONTAL_FACING;
-import static net.minecraft.util.Direction.DOWN;
-import static net.minecraft.util.Direction.UP;
 
 public class EntityTorch extends ArrowEntity {
 
-    public EntityTorch(FMLPlayMessages.SpawnEntity packet, World worldIn﻿) {
-        super(TORCH_ENTITY, worldIn﻿);
-    }
+	public EntityTorch(EntityType<? extends EntityTorch> entityType, World world) {
+		super(entityType, world);
+	}
 
-    public EntityTorch(EntityType<? extends EntityTorch> p_i50172_1_, World p_i50172_2_) {
-        super(p_i50172_1_, p_i50172_2_);
-    }
+	public EntityTorch(World world, double x, double y, double z) {
+		this(TORCH_ENTITY, world);
+		this.updatePosition(x, y, z);
+	}
 
-    public EntityTorch(World worldIn, double x, double y, double z) {
-        super(TORCH_ENTITY, x, y, z, worldIn);
-    }
+	public EntityTorch(World worldIn, LivingEntity owner) {
+		this(TORCH_ENTITY, worldIn);
+		this.updatePosition(owner.getX(), owner.getEyeY() - 0.10000000149011612D, owner.getZ());
+		this.setOwner(owner);
+		if (owner instanceof PlayerEntity) {
+			this.pickupType = PersistentProjectileEntity.PickupPermission.ALLOWED;
+		}
+	}
 
-    public EntityTorch(World worldIn, LivingEntity shooter) {
-        super(TORCH_ENTITY, shooter, worldIn);
-    }
+	@Override
+	protected void onEntityHit(EntityHitResult entityHitResult) {
+		super.onEntityHit(entityHitResult);
+		Entity entity = entityHitResult.getEntity();
+		entity.setOnFireFor(100);
+	}
 
-    @Override
-    protected void onEntityHit(EntityRayTraceResult entityRayTraceResult) {
-        super.onEntityHit(entityRayTraceResult);
-        Entity entity = entityRayTraceResult.getEntity();
-        entity.setOnFireFor(100);
-    }
+	@Override
+	protected void onBlockHit(BlockHitResult blockHitResult) {
+		super.onBlockHit(blockHitResult);
+		BlockHitResult.Type raytraceresultType = blockHitResult.getType();
+		if (raytraceresultType == BlockHitResult.Type.BLOCK) {
+			BlockState blockstate = this.world.getBlockState(blockHitResult.getBlockPos());
+			setTorch(blockHitResult, blockstate, raytraceresultType);
+		}
+	}
 
-    @Override
-    protected void func_230299_a_(BlockRayTraceResult raytraceResultIn) {
-        super.func_230299_a_(raytraceResultIn);
-        RayTraceResult.Type raytraceresult$type = raytraceResultIn.getType();
-        if (raytraceresult$type == RayTraceResult.Type.BLOCK) {
-            BlockRayTraceResult blockraytraceresult = raytraceResultIn;
-            BlockState blockstate = this.world.getBlockState(blockraytraceresult.getPos());
-            setTorch(blockraytraceresult, blockstate, raytraceResultIn);
-        }
-    }
+	@Override
+	public Packet<?> createSpawnPacket() {
+		Entity entity = this.getOwner();
+		return new EntitySpawnS2CPacket(this, entity == null ? 0 : entity.getEntityId());
+	}
 
-    @Override
-    public IPacket<?> createSpawnPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
-    }
+	private void setTorch(BlockHitResult blockHitResult, BlockState blockstate, BlockHitResult.Type raytraceResultIn) {
+		BlockPos blockpos = blockHitResult.getBlockPos();
+		if (!blockstate.isAir()) {
+			if (!world.isClient) {
+				Direction face = blockHitResult.getSide();
+				BlockState torchState = Blocks.WALL_TORCH.getDefaultState();
+				BlockPos setBlockPos = getPosOfFace(blockpos, face);
+				if (isBlockAIR(setBlockPos)) {
+					if (face == Direction.UP) {
+						torchState = Blocks.TORCH.getDefaultState();
+						world.setBlockState(setBlockPos, torchState);
+					} else if (face == Direction.DOWN && CeilingTorch != null) {
+						BlockState ceilingTorch = CeilingTorch.getDefaultState();
+						world.setBlockState(setBlockPos, ceilingTorch);
+					} else if (face != Direction.DOWN) {
+//						world.setBlockState(setBlockPos, torch_state.with(Property.HORIZONTAL_FACING, face));
+						world.setBlockState(setBlockPos, torchState);
+					}
+					this.setDead();
+				}
+			}
+		}
+	}
 
-    private void setTorch(BlockRayTraceResult blockraytraceresult, BlockState blockstate, RayTraceResult raytraceResultIn) {
-        BlockPos blockpos = blockraytraceresult.getPos();
-        if (!blockstate.isAir(this.world, blockpos)) {
-            if (!world.isClient) {
-                Direction face = ((BlockRayTraceResult) raytraceResultIn).getFace();
-                BlockState torch_state = Blocks.WALL_TORCH.getDefaultState();
-                BlockPos setBlockPos = getPosOfFace(blockpos, face);
-                if (isBlockAIR(setBlockPos)) {
-                    if (face == UP) {
-                        torch_state = Blocks.TORCH.getDefaultState();
-                        world.setBlockState(setBlockPos, torch_state);
-                    } else if (face == DOWN && CeilingTorch != null) {
-                        BlockState ceiling_torch = CeilingTorch.getDefaultState();
-                        world.setBlockState(setBlockPos, ceiling_torch);
-                    } else if (face != DOWN) {
-                        world.setBlockState(setBlockPos, torch_state.with(HORIZONTAL_FACING, face));
-                    }
-                    this.setDead();
-                }
-            }
-        }
-    }
+	private BlockPos getPosOfFace(BlockPos blockPos, Direction face) {
+		switch (face) {
+		case UP:
+			return blockPos.up();
+		case EAST:
+			return blockPos.east();
+		case WEST:
+			return blockPos.west();
+		case SOUTH:
+			return blockPos.south();
+		case NORTH:
+			return blockPos.north();
+		case DOWN:
+			return blockPos.down();
+		}
+		return blockPos;
+	}
 
-    private BlockPos getPosOfFace(BlockPos blockPos, Direction face) {
-        switch (face) {
-            case UP:
-                return blockPos.up();
-            case EAST:
-                return blockPos.east();
-            case WEST:
-                return blockPos.west();
-            case SOUTH:
-                return blockPos.south();
-            case NORTH:
-                return blockPos.north();
-            case DOWN:
-                return blockPos.down();
-        }
-        return blockPos;
-    }
+	private void setDead() {
+		this.remove();
+	}
 
-    private void setDead() {
-        this.remove();
-    }
+	@Override
+	protected ItemStack asItemStack() {
+		return new ItemStack(Blocks.TORCH);
+	}
 
-    @Override
-    protected ItemStack getArrowStack() {
-        return new ItemStack(Blocks.TORCH);
-    }
-
-    private boolean isBlockAIR(BlockPos pos) {
-        Block getBlock = this.world.getBlockState(pos).getBlock();
-        if (getBlock instanceof BushBlock) return true;
-        Block[] a = {Blocks.CAVE_AIR, Blocks.AIR, Blocks.SNOW, Blocks.VINE};//空気だとみなすブロックリスト
-        for (Block traget : a) {
-            if (getBlock == traget) return true;
-        }
-        return false;
-    }
-
+	private boolean isBlockAIR(BlockPos pos) {
+		Block block = this.world.getBlockState(pos).getBlock();
+		Set<Block> airLike = Set.of(Blocks.CAVE_AIR, Blocks.AIR, Blocks.SNOW, Blocks.VINE, Blocks.DEAD_BUSH,
+				Blocks.POTTED_DEAD_BUSH, Blocks.ROSE_BUSH, Blocks.SWEET_BERRY_BUSH);
+		return airLike.contains(block);
+	}
 }
